@@ -71,3 +71,46 @@ func UploadDirectlyToS3() {
     }
 }
 ```
+
+## Watch file change by k8s configmap
+
+```shell
+# Event trigger list when files in directory changed by k8s configmap
+CREATE        "app/..2023_12_21_11_49_43.4178923114" 
+CHMOD         "app/..2023_12_21_11_49_43.4178923114"
+CREATE        "app/..data_tmp"
+RENAME        "app/..data_tmp"
+CREATE        "app/..data"
+REMOVE        "app/..2023_12_21_11_45_32.3293038872"
+```
+
+```go
+func WatchFileChangeByK8sConfigMap() {
+    watcher, err := fsnotify.NewWatcher()
+    if err != nil {
+        panic(err)
+    }
+    defer watcher.Close()
+    if err = watcher.Add("/path/to/watch"); err != nil {
+        panic(err)
+    }
+    for {
+        select {
+        case event, ok := <-watcher.Events:
+            if !ok {
+                continue
+            }
+            if event.Op.Has(fsnotify.Remove) {
+                // file changed
+            }
+        case wErr, ok := <-watcher.Errors:
+            if !ok {
+                continue
+            }
+            if wErr != nil {
+                fmt.Println(wErr.Error())
+            }
+        }
+    }
+}
+```
