@@ -114,3 +114,15 @@ func WatchFileChangeByK8sConfigMap() {
     }
 }
 ```
+
+## Scan fields by gorm but do not create columns in DB
+
+```go
+type Table struct {
+    // ref: https://github.com/go-gorm/gorm/issues/5178
+    // <-:false             no write permission
+    // ->                   read permission
+    // -:migration          ignore migration
+    A int `json:"a" gorm:"<-:false;->;-:migration"`
+}
+```
