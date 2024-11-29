@@ -126,3 +126,49 @@ type Table struct {
     A int `json:"a" gorm:"<-:false;->;-:migration"`
 }
 ```
+
+## Streaming upload file in http client side
+
+```go
+func StreamingUpload() error {
+    pr, pw := io.Pipe()
+    writer := multipart.NewWriter(pw)
+    go func() {
+        // optional extra form data field
+        writer.WriteField("xxx", "xxx")
+        file, err := os.Open(filePath)
+        if err != nil {
+            pw.CloseWithError(err)
+            return
+        }
+        defer file.Close()
+
+        part, err := writer.CreateFromFile("file", fileName)
+        if err != nil {
+            pw.CloseWithError(err)
+            return
+        }
+        _, err = io.Copy(part, file)
+        if err != nil {
+            pw.CloseWithError(err)
+            return
+        }
+        pw.CloseWithError(writer.Close())
+    }()
+
+    req, err := http.NewRequest("POST", url, pr)
+    if err != nil {
+        return err
+    }
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+    client := &http.Client{Timeout: 0}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    
+    // ...
+    return nil
+}
+```
