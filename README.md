@@ -172,3 +172,32 @@ func StreamingUpload() error {
     return nil
 }
 ```
+
+## Dynamic Time Ticker
+
+```go
+func DynamicTimeTicker(ctx context.Context, trigger <-chan struct{}) {
+    interval := 60
+    ticker := time.NewTicker(time.Second * time.Duration(interval))
+    loop:
+    for {
+        select {
+        case <-ctx.Done():
+            break loop
+        case <-trigger:
+            if interval == 1 {
+                break loop
+            }
+            fmt.Println("TRIGGER")
+
+            ticker.Stop()
+            interval /= 2
+            ticker = time.NewTicker(time.Second * time.Duration(interval))
+        case <-ticker.C:
+            fmt.Println("TICK")
+        }
+    }
+
+    ticker.Stop()
+}
+```
